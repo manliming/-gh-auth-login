@@ -180,6 +180,8 @@ const Music={
     this.muted=!this.muted;
     if(!this.ctx)this.init();
     else this.updateMute();
+    // 浏览器要求用户交互后才能播放音频
+    if(this.ctx&&this.ctx.state==='suspended'){this.ctx.resume();}
   },
   getSeason(){const s=['spring','summer','fall','winter'][(G.lvl-1)%4];return s},
   start(){
@@ -268,7 +270,7 @@ const Music={
 //  音效
 // ══════════════════════════════════════════
 function beep(f,d,t='square',v=.04){
-  const a=Music.ctx||ac2();
+  const a=ac2(); // 音效使用独立AudioContext，不受音乐静音影响
   if(!a)return;
   const o=a.createOscillator(),g=a.createGain();
   o.type=t;o.frequency.value=f;
@@ -278,7 +280,16 @@ function beep(f,d,t='square',v=.04){
   o.start();o.stop(a.currentTime+d);
 }
 let ac2Ctx=null;
-function ac2(){if(!ac2Ctx)try{ac2Ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}return ac2Ctx}
+function ac2(){
+  if(!ac2Ctx)try{ac2Ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}
+  if(ac2Ctx&&ac2Ctx.state==='suspended'){try{ac2Ctx.resume()}catch(e){}}
+  return ac2Ctx;
+}
+// 统一的音频恢复：每次用户交互时调用，确保所有AudioContext都苏醒
+function resumeAllAudio(){
+  ac2();
+  if(Music.ctx&&Music.ctx.state==='suspended'){try{Music.ctx.resume()}catch(e){}}
+}
 const S={
   eat:()=>beep(320+Math.random()*140,.04,'square',.03),
   big:()=>beep(160,.25,'sawtooth',.04),
@@ -972,7 +983,7 @@ function drawHUD(time,p){
 function setDir(dx,dy){if(G.state==='over'||G.state==='die'||G.state==='levelup')return;G.player.ndx=dx;G.player.ndy=dy}
 
 C.addEventListener('keydown',e=>{
-  e.preventDefault();ac2();
+  e.preventDefault();resumeAllAudio();
   if(e.code==='KeyR'&&G.state==='over'){resetAll();return}
   switch(e.code){case'ArrowUp':case'KeyW':setDir(0,-1);break;case'ArrowDown':case'KeyS':setDir(0,1);break;case'ArrowLeft':case'KeyA':setDir(-1,0);break;case'ArrowRight':case'KeyD':setDir(1,0);break}
 });
@@ -981,19 +992,19 @@ document.addEventListener('keydown',e=>{
   if(k.includes(e.code)&&document.activeElement!==C){e.preventDefault();C.focus();C.dispatchEvent(new KeyboardEvent('keydown',{code:e.code,bubbles:true}))}
 });
 C.addEventListener('blur',()=>{setTimeout(()=>C.focus(),30)});
-C.addEventListener('click',()=>{C.focus();ac2()});
+C.addEventListener('click',()=>{C.focus();resumeAllAudio()});
 C.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 
 const btns={du:[0,-1],dd:[0,1],dl:[-1,0],dr:[1,0]};
 Object.entries(btns).forEach(([cls,dir])=>{
   const el=document.querySelector('.'+cls);
   if(!el)return;
-  el.addEventListener('pointerdown',e=>{e.preventDefault();ac2();C.focus();if(G.state==='over')resetAll();setDir(dir[0],dir[1])});
+  el.addEventListener('pointerdown',e=>{e.preventDefault();resumeAllAudio();C.focus();if(G.state==='over')resetAll();setDir(dir[0],dir[1])});
   el.addEventListener('pointerup',e=>e.preventDefault());
 });
 
-document.getElementById('rst').addEventListener('click',()=>{ac2();C.focus();resetAll()});
-document.getElementById('muteBtn').addEventListener('click',()=>{Music.toggle();ac2()});
+document.getElementById('rst').addEventListener('click',()=>{resumeAllAudio();C.focus();resetAll()});
+document.getElementById('muteBtn').addEventListener('click',()=>{resumeAllAudio();Music.toggle()});
 
 // ══════════════════════════════════════════
 //  GAME LOOP
