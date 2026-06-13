@@ -5,6 +5,11 @@
 <title>🍀 吃豆人 · 星露谷</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+/* Fallback if Google Fonts unavailable: any monospace works okay */
+@font-face {
+  font-family: 'PixelFallback';
+  src: local('Courier New'), local('SimHei');
+}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 
 :root{
@@ -14,15 +19,31 @@
 
 body{
   background:var(--bg);display:flex;justify-content:center;align-items:center;min-height:100vh;
-  font-family:'Press Start 2P',cursive;-webkit-tap-highlight-color:transparent;user-select:none;
+  font-family:'Press Start 2P','Courier New',monospace;-webkit-tap-highlight-color:transparent;user-select:none;
   background-image:radial-gradient(ellipse at 25% 15%,#3d2812 0%,transparent 55%),radial-gradient(ellipse at 75% 85%,#2e1d0b 0%,transparent 55%);
 }
 .wrap{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;width:100%;max-width:590px}
 
 /* ── title ── */
-.title-row{display:flex;align-items:center;gap:10px}
-.title{font-size:13px;color:var(--gold);text-shadow:3px 3px 0 #4a2a0e,0 0 20px rgba(240,200,96,.15);text-align:center;line-height:1.5;letter-spacing:1px}
-.title .sub{font-size:7px;color:var(--gold-dim);text-shadow:none;display:block}
+.title{font-size:15px;color:var(--gold);text-shadow:3px 3px 0 #4a2a0e,0 0 20px rgba(240,200,96,.15);text-align:center;line-height:1.5;letter-spacing:1px}
+.title .sub{font-size:8px;color:var(--gold-dim);text-shadow:none;display:block}
+
+/* ── music bar ── */
+.music-bar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
+  background:linear-gradient(180deg,#3d1a2a,#2a101a);border:3px solid #6a3a5a;
+  padding:6px 14px;border-radius:5px;width:100%;max-width:560px;
+  box-shadow:0 0 16px rgba(180,100,200,.15),0 3px 0 #1a0a10,inset 0 0 10px rgba(0,0,0,.3);
+}
+.music-toggle{
+  background:#8b4a6a;border:none;color:#ffccdd;font-family:'Press Start 2P','Courier New',monospace;
+  font-size:9px;padding:8px 16px;cursor:pointer;border-radius:4px;
+  border-bottom:3px solid #5a2a4a;transition:.1s;
+}
+.music-toggle:hover{background:#9b5a7a;transform:translateY(-1px)}
+.music-toggle:active{transform:translateY(2px);border-bottom-width:2px}
+.music-toggle.off{background:#3a2a3a;color:#887788;border-bottom-color:#2a1a2a}
+.music-info{color:#cc99bb;font-size:7px;text-align:center;line-height:1.5}
 
 /* ── panel ── */
 .panel{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;background:var(--panel-bg);border:3px solid var(--panel-border);padding:5px 10px;border-radius:5px;box-shadow:inset 0 0 10px rgba(0,0,0,.5),0 3px 0 #1a0e04}
@@ -39,16 +60,13 @@ canvas{border:5px solid var(--panel-border);border-radius:4px;outline:none;displ
 /* ── buttons ── */
 .btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center}
 .hint{color:#6b5540;font-size:6px;text-align:center;line-height:2.2}
-.k{display:inline-block;background:#2a1808;border:2px solid var(--panel-border);color:var(--text);padding:1px 4px;border-radius:3px;font-size:6px;font-family:'Press Start 2P',cursive;margin:0 1px}
+.k{display:inline-block;background:#2a1808;border:2px solid var(--panel-border);color:var(--text);padding:1px 4px;border-radius:3px;font-size:6px;font-family:'Press Start 2P','Courier New',monospace;margin:0 1px}
 .btn{
-  background:var(--btn);border:none;color:var(--gold);font-family:'Press Start 2P',cursive;font-size:7px;
+  background:var(--btn);border:none;color:var(--gold);font-family:'Press Start 2P','Courier New',monospace;font-size:7px;
   padding:9px 14px;cursor:pointer;border-radius:4px;border-bottom:3px solid #3a5a1a;transition:.1s
 }
 .btn:hover{background:var(--btn-hover);transform:translateY(-1px)}
 .btn:active{transform:translateY(2px);border-bottom-width:2px}
-.music-btn{background:#6b3a5a;border-bottom-color:#3a1a2a;font-size:10px;padding:6px 8px;min-width:32px}
-.music-btn:hover{background:#8b4a7a}
-.music-btn.muted{background:#3a2a3a;opacity:.6}
 
 /* ── dpad ── */
 .dpad{display:none;grid-template-areas:". u ." "l . r" ". d .";grid-template-columns:repeat(3,42px);grid-template-rows:repeat(3,42px);gap:2px}
@@ -56,14 +74,21 @@ canvas{border:5px solid var(--panel-border);border-radius:4px;outline:none;displ
 .db:active{background:rgba(90,58,26,.9)}
 .du{grid-area:u}.dd{grid-area:d}.dl{grid-area:l}.dr{grid-area:r}
 
-@media(max-width:620px){.dpad{display:grid}.title{font-size:10px}.title .sub{font-size:6px}}
+@media(max-width:620px){
+  .dpad{display:grid}.title{font-size:10px}.title .sub{font-size:6px}
+  .music-bar{gap:6px;padding:4px 8px}
+  .music-toggle{font-size:7px;padding:6px 10px}
+  .music-info{font-size:6px}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
-<div class="title-row">
-<button class="btn music-btn" id="muteBtn" title="音乐">🎵</button>
 <div class="title">🍀 吃豆人 · 星露谷<br><span class="sub">Stardew Pac-Man</span></div>
+
+<div class="music-bar" id="musicBar">
+  <button class="music-toggle" id="muteBtn">🎵 音乐: 开</button>
+  <span class="music-info" id="musicInfo">♪ 春 · Spring</span>
 </div>
 
 <div class="panel">
@@ -144,7 +169,11 @@ const Music={
   updateMute(){
     if(this.masterGain) this.masterGain.gain.value=this.muted?0:.12;
     const btn=document.getElementById('muteBtn');
-    if(btn){btn.textContent=this.muted?'🔇':'🎵';btn.classList.toggle('muted',this.muted)}
+    const info=document.getElementById('musicInfo');
+    const s=this.getSeason();
+    const sn={spring:'🌸 春',summer:'☀️ 夏',fall:'🍂 秋',winter:'❄️ 冬'}[s];
+    if(btn){btn.textContent=this.muted?'🔇 音乐: 关':'🎵 音乐: 开';btn.classList.toggle('off',this.muted);}
+    if(info){info.textContent=`♪ ${sn} · ${['Spring','Summer','Fall','Winter'][['spring','summer','fall','winter'].indexOf(s)]}`;}
     try{localStorage.sdvMute=this.muted?'1':'0'}catch(e){}
   },
   toggle(){
